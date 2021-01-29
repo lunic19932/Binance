@@ -1,10 +1,15 @@
 package Analysis;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.jfree.data.time.Minute;
+
 import com.binance.api.client.domain.market.Candlestick;
+
+import io.PlotPoints;
 
 public class Analyser {
 	List<Candlestick> candleList;
@@ -81,6 +86,38 @@ public class Analyser {
 
 	public void getDiagonalTouchpoints() {
 
+	}
+
+	public PlotPoints getDifferenzGraph(int filterRange) {
+		ArrayList<Double> diffList = new ArrayList<Double>();
+		PlotPoints points = new PlotPoints();
+		for (int i = 0; i < candleList.size(); i++) {
+			int startValue = ((i - filterRange < 0) ? 0 : i - filterRange);
+			int endValue = i;// ((i + filterRange < candleList.size()) ? i + filterRange :
+								// candleList.size()// - 1);
+			double low = candleList.get(startValue).getLowDouble();
+			double high = candleList.get(startValue).getHighDouble();
+			double median = high;
+			median += low;
+			for (int k = startValue + 1; k <= endValue; k++) {
+				Candlestick candle = candleList.get(k);
+				if (low > candle.getLowDouble()) {
+					low = candle.getLowDouble();
+				}
+				if (high < candle.getHighDouble()) {
+					high = candle.getHighDouble();
+				}
+				median += high;
+				median += low;
+			}
+			median /= 2 * filterRange;
+			double diff = ((high - low) / median);
+			if (i > filterRange / 3) {
+				points.addPoint(new Minute(new Date(candleList.get(i).getOpenTime())), diff);
+
+			}
+		}
+		return points;
 	}
 
 }

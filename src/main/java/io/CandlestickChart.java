@@ -24,7 +24,6 @@
 package io;
 
 import java.awt.Color;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -49,8 +48,6 @@ import com.binance.api.client.domain.market.Candlestick;
 import com.binance.api.client.domain.market.CandlestickInterval;
 
 import Analysis.Analyser;
-import Analysis.Point;
-import Analysis.Triangle;
 
 /**
  * This class builds a traditional candlestick chart.
@@ -106,6 +103,7 @@ public class CandlestickChart {
 			lows[i] = Double.parseDouble(cStick.getLow());
 			closes[i] = Double.parseDouble(cStick.getClose());
 			volumes[i] = Double.parseDouble(cStick.getVolume());
+
 		}
 
 		return new DefaultHighLowDataset("btc", dates, highs, lows, opens, closes, volumes);
@@ -134,14 +132,14 @@ public class CandlestickChart {
 		return dataset;
 	}
 
-	public void createLineFromPoints(Point point) {
+	public void createLineFromPoints(PlotPoints points) {
 		TimeSeriesCollection dataset = new TimeSeriesCollection();
 		org.jfree.data.time.TimeSeries chartTimeSeries = new org.jfree.data.time.TimeSeries("Btc price");
-		while (point != null) {
-			Candlestick cStick = point.getCandle();
-			chartTimeSeries.add(new Minute(new Date(cStick.getOpenTime())), cStick.getHighDouble());
-			point = point.getNextPoint();
+		for (int i = 0; i < points.pointList.size(); i++) {
+			chartTimeSeries.add(points.getTimePeriodList().get(i), points.getPointList().get(i));
+			System.out.println(points.getPointList().get(i));
 		}
+
 		dataset.addSeries(chartTimeSeries);
 		int index = plot.getDatasetCount();
 		plot.setDataset(index, dataset);
@@ -191,6 +189,7 @@ public class CandlestickChart {
 		BinanceApiRestClient client = factory.newRestClient();
 		List<Candlestick> candlestickList = client.getCandlestickBars("BTCUSDT".toUpperCase(),
 				CandlestickInterval.FOUR_HOURLY);
+		candlestickList = candlestickList.subList(0, 499);
 		CandlestickChart charts = new CandlestickChart();
 		charts.createCandlestickChart(candlestickList);
 
@@ -213,15 +212,8 @@ public class CandlestickChart {
 //			}
 //
 //		}
-		Triangle tri = new Triangle(candlestickList);
-		Point point = tri.calculateHighPoints().getNextPoint();
-//		charts.createLineFromPoints(point);
-		ArrayList<Point> pointList = tri.getSavePoints();
-		System.out.println(pointList.size());
-		for (int i = 0; i < pointList.size(); i++) {
+		charts.createLineFromPoints(anl.getDifferenzGraph(20));
 
-			charts.createLineFromPoints(pointList.get(i));
-		}
 	}
 
 }
